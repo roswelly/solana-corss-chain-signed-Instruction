@@ -5,10 +5,6 @@ use crate::signed_message::WalletType;
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum SSIError {
-    /// an error return when the message hash input does not match
-    /// the expected hash. expected hash is usually the hash
-    /// returned by the program manually encoding the instruction during
-    /// verification
     #[error("invalid hash. input {input:?}, expected {expected:?}")]
     InvalidMessageHash { input: [u8; 32], expected: [u8; 32] },
     #[error("signature  recovery failed {0}")]

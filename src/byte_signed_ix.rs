@@ -9,13 +9,7 @@ use crate::{
     },
 };
 
-/// ByteSignedIx is a reasonable default for usage of the SSI specification. To use this
-/// simply implement the `SignedInstructinSerializoor` trait for the instruction enum defined
-/// in your solana program, and wrap any instance of the enum in `ByteSignedIx`.
-///
-/// This will conveniently wrap your instruction with all required functionality needed to perform
-/// on-chain verification of the instruction, and the entity signing the instruction while permitted the
-/// actual instruction to be relayed by anyone willing to pay a fee.
+
 pub struct ByteSignedIx {
     pub instruction: Box<dyn SignedInstructionSerializoor>,
 }
@@ -44,7 +38,6 @@ impl SignedInstruction for ByteSignedIx {
         Some(s_msg)
     }
     fn recover_signer(&self, signed_message: SignedMessage) -> Result<Secp256k1Pubkey, SSIError> {
-        // first generate the message hash references by the current ByteSignedIx instance
         let expected_hash = self.encode();
         if expected_hash.ne(&signed_message.message_hash) {
             return Err(SSIError::InvalidMessageHash {
@@ -52,7 +45,6 @@ impl SignedInstruction for ByteSignedIx {
                 expected: expected_hash,
             });
         }
-        // only accept low order signatures https://docs.rs/solana-sdk/latest/solana_sdk/secp256k1_recover/fn.secp256k1_recover.html
         if libsecp256k1::Signature::parse_standard_slice(&signed_message.signature)?
             .s
             .is_high()

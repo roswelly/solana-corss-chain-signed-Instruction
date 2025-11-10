@@ -10,12 +10,9 @@ use ssi::signed_message::WalletType;
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct AuthUser {
-    /// 32 byte public key of the wallet which is expected to sign messages
     pub signing_key: [u8; 32],
-    /// the nonce that was used to generate the pda
     pub nonce: u8,
     pub wallet_type: WalletType,
-    /// padding for extra storage space
     pub padding: [u8; 128],
 }
 
@@ -29,7 +26,6 @@ impl AuthUser {
     pub fn derive(signing_key: [u8; 32]) -> (Pubkey, u8) {
         Pubkey::find_program_address(&[Self::seed(), &signing_key[..]], &crate::ID)
     }
-    /// creates a pda address given the signign key and nonce
     pub fn create_pda(signing_key: [u8; 32], nonce: u8) -> Pubkey {
         Pubkey::create_program_address(
             &[Self::seed(), &signing_key[..], &[nonce]],
@@ -37,7 +33,6 @@ impl AuthUser {
         )
         .unwrap()
     }
-    /// similar to create_pda except it uses data stored in the account
     pub fn parse_pda(&self) -> Pubkey {
         Self::create_pda(self.signing_key, self.nonce)
     }
@@ -46,7 +41,6 @@ impl AuthUser {
 impl Sealed for AuthUser {}
 impl IsInitialized for AuthUser {
     fn is_initialized(&self) -> bool {
-        // TODO: should we remove the nonce == 0 check?
         self.signing_key.ne(&[0_u8; 32]) && self.nonce > 0
     }
 }

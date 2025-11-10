@@ -1,5 +1,3 @@
-//! Program entrypoint
-
 #![cfg(not(feature = "no-entrypoint"))]
 
 use solana_program::{

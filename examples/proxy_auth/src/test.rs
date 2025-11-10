@@ -11,7 +11,6 @@ use {
     solana_program_test::*,
     solana_sdk::{signature::Signer, transaction::Transaction},
 };
-// this will panic because wormhole isn't properly forked into the localnet environment
 #[tokio::test]
 async fn test_register_auth_user() {
     let mut rng = thread_rng();
@@ -23,7 +22,6 @@ async fn test_register_auth_user() {
     );
 
     let (banks_client, payer, _) = pt.start().await;
-    // Generate a random secret key
     let secret_key = SecretKey::random(&mut rng);
     let pub_key = PublicKey::from_secret_key(&secret_key);
     let eth_pub_key = ssi::utils::construct_eth_pubkey(&pub_key);
@@ -40,7 +38,6 @@ async fn test_register_auth_user() {
             nonce,
             wallet_type: WalletType::Ethereum,
         },
-        // because we are just signing  the `ix_data`, we can leave this default for nwo
         signed_message: Default::default(),
     };
     let byte_signed_ix: ByteSignedIx = (&proxy_auth_ix).into();

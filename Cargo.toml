@@ -1,6 +1,6 @@
 [package]
 name = "ssi"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "SSI is a specification for cross-chain gasless solana transactions and user authorization"
 exclude = ["examples/*"]

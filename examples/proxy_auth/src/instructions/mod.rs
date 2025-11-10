@@ -1,6 +1,4 @@
-/// proxies instructions to a cpi program with the auth_user as the cpi caller
 pub mod invoke_authenticated_cpi;
-/// provides the instruction used to create an auth user account
 pub mod register_auth_user;
 
 use solana_program::{log::sol_log as log, program_error::ProgramError};
@@ -11,41 +9,15 @@ use ssi::{
     signed_message::{SignedInstructionSerializoor, SignedMessage, WalletType},
 };
 
-/// Instructions supported by the proxy auth program
-///
-/// When serializing instructions for signing, omit the `signed_message` field of the enums
-///
-/// For example with ProxyAuthIx::RegisterAuthUser, we want to sign, and verify the `ix_data` component
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum ProxyAuthIx {
-    /// Registers a user for invoking authenticated gasless CPI calls
-    /// Accounts expected by this instruction:
-    ///
-    ///   0. `[writable]` fee payer
-    ///   1. `[writable]` auth_user
-    ///   2. `[]`         system_program
-    ///
     RegisterAuthUser {
-        // id = 0
         ix_data: RegisterAuthUserIx,
         signed_message: SignedMessage,
     },
-    /// Allows invoking a CPI call under the context of the auth_user, without
-    /// having the auth_user need to pay fees, and simply sign the `ix_data`
-    ///
-    /// Accounts expected by this instruction:
-    ///
-    ///  0. `[writeable]` fee payer
-    ///  1. `[]`          auth_user
-    ///  2. `[]`          cpi_program
-    ///  ....             cpi_program_accounts
     InvokeAuthenticatedCPI {
-        // id = 1
-        /// signed message of ix_data
         signed_message: SignedMessage,
-        /// to helpe with instruction (deser/ser)ialization we have the instruction data
-        /// for the program we are CPI'ing to last
         ix_data: Vec<u8>,
     },
 }
@@ -53,16 +25,10 @@ pub enum ProxyAuthIx {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RegisterAuthUserIx {
-    /// nonce used for deriving the auth_user pda
     pub nonce: u8,
-    /// wallet which was used to generate signatures
     pub wallet_type: WalletType,
 }
 
-/// although we aren't integrating the rest of the signed instruction
-/// format for ProxyAuthIx as it uses ByteSignedIx, we implement this
-/// trait as a convenience for serializing the data from the instruction
-/// that needs to be signed
 impl SignedInstructionSerializoor for ProxyAuthIx {
     fn serialize(&self) -> Vec<u8> {
         match self {
@@ -86,7 +52,6 @@ impl ProxyAuthIx {
         log(&format!("tag {tag}"));
         match *tag {
             0 => {
-                // read the nonce
                 let (nonce, rest) = Self::unpack_u8(rest)?;
                 let (wallet_type, rest) = Self::unpack_u8(rest)?;
                 let (signature, rest) = Self::unpack_bytes64(rest)?;
@@ -131,7 +96,7 @@ impl ProxyAuthIx {
                 signed_message,
             } => {
                 let mut buf = Vec::with_capacity(std::mem::size_of::<Self>());
-                buf.push(0); // instruction identifier
+                buf.push(0);
                 buf.push(ix_data.nonce);
                 buf.push(ix_data.wallet_type as u8);
                 buf.extend_from_slice(&signed_message.signature[..]);
@@ -145,7 +110,7 @@ impl ProxyAuthIx {
                 ix_data,
             } => {
                 let mut buf = Vec::with_capacity(std::mem::size_of::<Self>() + ix_data.len());
-                buf.push(1); // instruction identifier
+                buf.push(1);
                 buf.extend_from_slice(&signed_message.signature[..]);
                 buf.extend_from_slice(&signed_message.message_hash[..]);
                 buf.extend_from_slice(&signed_message.wallet_pubkey[..]);

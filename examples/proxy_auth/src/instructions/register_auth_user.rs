@@ -38,12 +38,6 @@ impl RegisterAuthUserAccountMeta {
     }
 }
 
-/// handlers register the authenticated user
-///
-/// accounts
-///     0 [writeable] - fee payer
-///     1 [writeable] - auth_user
-///     2 []          - system_program
 pub fn handle_register_auth_user(
     accounts: &[AccountInfo],
     ix: ProxyAuthIx,
@@ -65,24 +59,19 @@ pub fn handle_register_auth_user(
         return Err(ProgramError::InvalidSeeds);
     }
 
-    // verify the instruction
     let byte_signed_ix = ByteSignedIx {
         instruction: Box::new(ix),
     };
 
-    // extract the signer key
     let recovered_signer = byte_signed_ix.recover_signer(signed_message)?;
-    // convert the signer key into a public key
     let recovered_signer = ssi::utils::convert_recovered_public_key(recovered_signer)?;
 
-    // based on the specified wallet type, ensure the signatures match up
     match ix_data.wallet_type {
         WalletType::Ethereum => {
             let constructed_key = signed_message.compare_and_construct_eth_pubkey(WalletInfo {
                 wallet_type: WalletType::Ethereum,
                 raw_public_key: serialize_raw(recovered_signer),
             })?;
-            // we only care about verifying the first 20 bytes of the public key for eth wallets
             if constructed_key.ne(&signed_message.wallet_pubkey[0..20]) {
                 return Err(SSIError::CompareAndConstructMismatchedKey(format!(
                     "constructed_key {:?} != wallet_pubkey {:?}",
@@ -93,7 +82,6 @@ pub fn handle_register_auth_user(
             }
         }
         WalletType::Solana => {
-            // TODO: add support
             return Err(SSIError::UnsupportedWalletType.into());
         }
     }
